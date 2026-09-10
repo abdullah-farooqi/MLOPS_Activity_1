@@ -10,6 +10,10 @@ permissions:
   packages: write
 
 jobs:
+
+  # --------------------------------------------------
+  # 1. Test
+  # --------------------------------------------------
   test:
     name: Run Tests
     runs-on: ubuntu-latest
@@ -30,9 +34,13 @@ jobs:
           pip install -r requirements.txt
 
       - name: Run tests
-        run: pytest
+        run: |
+          pytest
 
 
+  # --------------------------------------------------
+  # 2. Build and Push Docker Image
+  # --------------------------------------------------
   build:
     name: Build and Push Docker Image
     needs: test
@@ -50,12 +58,9 @@ jobs:
         run: |
           VERSION=${GITHUB_REF_NAME#v}
           echo "version=$VERSION" >> "$GITHUB_OUTPUT"
-          echo "Building version: $VERSION"
 
-      - name: Show version
-        run: |
           echo "Git tag: $GITHUB_REF_NAME"
-          echo "Application version: ${{ steps.version.outputs.version }}"
+          echo "Docker image version: $VERSION"
 
       - name: Login to GitHub Container Registry
         uses: docker/login-action@v3
@@ -67,16 +72,16 @@ jobs:
       - name: Build Docker image
         run: |
           docker build \
-            -t ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }} \
-            -t ghcr.io/${{ github.repository }}:latest \
+            -t ghcr.io/${{ github.repository_owner }}/mlops_activity_1:${{ steps.version.outputs.version }} \
+            -t ghcr.io/${{ github.repository_owner }}/mlops_activity_1:latest \
             .
 
       - name: Push versioned Docker image
         run: |
           docker push \
-            ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}
+            ghcr.io/${{ github.repository_owner }}/mlops_activity_1:${{ steps.version.outputs.version }}
 
       - name: Push latest Docker image
         run: |
           docker push \
-            ghcr.io/${{ github.repository }}:latest
+            ghcr.io/${{ github.repository_owner }}/mlops_activity_1:latest
